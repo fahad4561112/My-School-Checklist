@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2563eb">
+<title>My School Checklist</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#202938;background:#f3f5f8}
+*{box-sizing:border-box}
+body{margin:0;padding:20px 12px}
+main{max-width:580px;margin:auto;background:white;padding:22px;border-radius:18px;box-shadow:0 5px 24px #16243a12}
+h1{font-size:27px;margin:5px 0} .sub{color:#64748b;font-size:14px}
+h2{font-size:16px;margin:24px 0 8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tag{font-size:12px;letter-spacing:1.5px;color:#64748b;font-weight:bold}
+progress{width:100%;height:10px;accent-color:#2563eb;margin:12px 0}
+.count,footer{font-size:12px;color:#64748b}
+label{display:flex;gap:12px;align-items:center;padding:13px 3px;border-bottom:1px solid #edf0f4;cursor:pointer;font-size:14px}
+input[type=checkbox]{width:20px;height:20px;accent-color:#2563eb;flex-shrink:0}
+label:has(input:checked) span{text-decoration:line-through;color:#8993a3}
+button{padding:11px 14px;border:1px solid #d9e0e9;background:white;border-radius:9px;font:inherit;cursor:pointer}
+button:hover{background:#f3f6fa}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+footer{margin-top:18px;line-height:1.5}
+@media (max-width:380px){main{padding:16px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><span class="tag">YEAR 7 ORGANISER</span><span style="font-size:30px" aria-hidden="true">🎒</span></div>
+  <h1>My School Checklist</h1>
+  <p class="sub">Everything I need for school, all in one place.</p>
+  <div class="top"><strong>Your progress</strong><strong id="percent">0%</strong></div>
+  <progress id="progress" value="0" max="100" aria-label="Checklist progress"></progress>
+  <div class="count" id="count" aria-live="polite">0 of 17 items checked</div>
+  <div id="list"></div>
+  <div class="actions">
+    <button id="reset" type="button">↻ Reset checklist</button>
+    <button id="checkall" type="button">✓ Check all</button>
+  </div>
+  <footer id="status" aria-live="polite">Your ticks are saved in this browser on this device. Use the same browser to see them again.</footer>
+</main>
+<script>
+const groups = {
+  "Everyday essentials": [
+    "School bag","School timetable","Pencil case",
+    "Black or blue pens","Pencils","Eraser and sharpener",
+    "Ruler","Exercise books and folders",
+    "School planner or homework diary"
+  ],
+  "Bring when needed": [
+    "Calculator (if required)","Correct books for today's lessons",
+    "Homework and assignments","PE kit and trainers",
+    "School ID or lanyard (if required)","Water bottle",
+    "Lunch or lunch money","Travel pass (if needed)"
+  ]
+};
+const key = "mySchoolChecklistV1";
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(key)||"{}") || {}; } catch(e) { saved = {}; }
+const list = document.getElementById("list");
+for (const [heading,items] of Object.entries(groups)) {
+  const h = document.createElement("h2");
+  h.textContent = heading;
+  list.appendChild(h);
+  for (const item of items) {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = !!saved[item];
+    const span = document.createElement("span");
+    span.textContent = item;
+    input.addEventListener("change", () => {
+      saved[item] = input.checked;
+      save();
+      update();
+    });
+    label.append(input,span);
+    list.appendChild(label);
+  }
+}
+function save() {
+  try {
+    localStorage.setItem(key,JSON.stringify(saved));
+    document.getElementById("status").textContent =
+      "✓ Progress saved on this device in this browser.";
+  } catch(e) {
+    document.getElementById("status").textContent =
+      "Browser storage unavailable. Your ticks may not be saved after closing.";
+  }
+}
+function update() {
+  const boxes = [...list.querySelectorAll("input[type=checkbox]")];
+  const n = boxes.filter(b=>b.checked).length;
+  const pct = Math.round(100*n/boxes.length);
+  document.getElementById("percent").textContent = pct+"%";
+  document.getElementById("progress").value = pct;
+  document.getElementById("count").textContent = `${n} of ${boxes.length} items checked`;
+  if(n===boxes.length) document.getElementById("status").textContent =
+    "🎉 All done! You're organised.";
+}
+document.getElementById("reset").onclick = () => {
+  if(!confirm("Reset all your ticks?")) return;
+  saved = {};
+  list.querySelectorAll("input[type=checkbox]").forEach(b=>b.checked=false);
+  save(); update();
+};
+document.getElementById("checkall").onclick = () => {
+  list.querySelectorAll("input[type=checkbox]").forEach(b=>{
+    b.checked=true;
+    saved[b.nextElementSibling.textContent]=true;
+  });
+  save(); update();
+};
+update();
+</script>
+</body>
+</html>
